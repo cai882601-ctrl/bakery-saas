@@ -1,95 +1,105 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
-import { supabaseAdmin } from "@/lib/supabase";
 import Stripe from "stripe";
+import { getStripe, getStripeWebhookSecret } from "@/lib/stripe";
+import { supabaseAdmin } from "@/lib/supabase";
 
-if (!process.env.STRIPE_WEBHOOK_SECRET) {
-  throw new Error("STRIPE_WEBHOOK_SECRET is not set in environment variables");
-}
-const webhookSecret: string = process.env.STRIPE_WEBHOOK_SECRET;
+export const runtime = "nodejs";
+
+type OrderPaymentState = {
+  status: string;
+  paid_at: string | null;
+  stripe_checkout_session_id: string | null;
+};
 
 export async function POST(req: NextRequest) {
-  const body = await req.text();
-  const signature = req.headers.get("stripe-signature");
-
-  if (!signature) {
-    return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
-  }
-
-  let event: Stripe.Event;
-
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      webhookSecret
-    );
-  } catch (err) {
-    console.error("Webhook signature verification failed:", err);
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
-  }
+    const body = await req.text();
+    const signature = req.headers.get("stripe-signature");
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const orderId = session.metadata?.orderId;
+    if (!signature) {
+      return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
+    }
 
-      if (orderId) {
-        console.log(`Payment succeeded for order ${orderId}, updating status...`);
-        
-        // Update paid_at and conditionally update status
-        // We only move to 'confirmed' if it's currently 'pending'
-        const { data: currentOrder } = await supabaseAdmin
-          .from("orders")
-          .select("status, paid_at")
-          .eq("id", orderId)
-          .single();
+    const stripe = getStripe();
+    const event = stripe.webhooks.constructEvent(body, signature, getStripeWebhookSecret());
 
-        if (currentOrder && !currentOrder.paid_at) {
-          const updates: { paid_at: string; status?: string } = {
-            paid_at: new Date().toISOString(),
-          };
-          if (currentOrder.status === "pending") {
-            updates.status = "confirmed";
-          }
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object;
+        const orderId = session.metadata?.orderId;
 
-          const { error } = await supabaseAdmin
-            .from("orders")
-            .update(updates)
-            .eq("id", orderId);
-
-          if (error) {
-            console.error(`Failed to update order ${orderId} on payment success:`, error);
-          } else {
-            console.log(`Successfully updated order ${orderId} to paid${updates.status ? " and confirmed" : ""}.`);
-          }
+        if (!orderId) {
+          console.warn("No orderId found in session metadata for checkout.session.completed event");
+          break;
         }
-      } else {
-        console.warn("No orderId found in session metadata for checkout.session.completed event");
+
+        const { data: currentOrder, error: orderFetchError } = await supabaseAdmin
+          .from("orders")
+          .select("status, paid_at, stripe_checkout_session_id")
+          .eq("id", orderId)
+          .single<OrderPaymentState>();
+
+        if (orderFetchError || !currentOrder) {
+          console.error(`Failed to fetch order ${orderId} during checkout completion:`, orderFetchError);
+          break;
+        }
+
+        if (currentOrder.paid_at) {
+          break;
+        }
+
+        const updates: { paid_at: string; status?: string; stripe_checkout_session_id?: string } = {
+          paid_at: new Date().toISOString(),
+        };
+
+        if (currentOrder.status === "pending") {
+          updates.status = "confirmed";
+        }
+
+        if (session.id !== currentOrder.stripe_checkout_session_id) {
+          updates.stripe_checkout_session_id = session.id;
+        }
+
+        const { error: updateError } = await supabaseAdmin
+          .from("orders")
+          .update(updates)
+          .eq("id", orderId)
+          .is("paid_at", null);
+
+        if (updateError) {
+          console.error(`Failed to update order ${orderId} on payment success:`, updateError);
+        }
+
+        break;
       }
-      break;
-    }
 
-    case "payment_intent.succeeded": {
-      console.log(`Payment intent succeeded: ${event.data.object.id}`);
-      break;
-    }
-
-    case "payment_intent.payment_failed": {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      const orderId = paymentIntent.metadata?.orderId;
-      console.error(`Payment failed for order ${orderId}: ${paymentIntent.last_payment_error?.message}`);
-      
-      if (orderId) {
-        // Log the failure to the database or notify (optional for now)
-        console.log(`Log failure for order ${orderId}`);
+      case "payment_intent.succeeded": {
+        const paymentIntent = event.data.object;
+        console.log(`Payment intent succeeded: ${paymentIntent.id}`);
+        break;
       }
-      break;
+
+      case "payment_intent.payment_failed": {
+        const paymentIntent = event.data.object;
+        const orderId = paymentIntent.metadata?.orderId ?? "unknown";
+        console.error(
+          `Payment failed for order ${orderId}: ${paymentIntent.last_payment_error?.message ?? "Unknown error"}`
+        );
+        break;
+      }
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
     }
 
-    default:
-      console.log(`Unhandled event type: ${event.type}`);
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    if (err instanceof Stripe.errors.StripeSignatureVerificationError) {
+      console.error("Webhook signature verification failed:", err.message);
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
+
+    console.error("Stripe webhook error:", err);
+    return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
   }
-
-  return NextResponse.json({ received: true });
 }

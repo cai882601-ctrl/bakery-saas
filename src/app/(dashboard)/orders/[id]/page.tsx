@@ -3,7 +3,9 @@
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import type { inferRouterOutputs } from "@trpc/server";
 import { trpc } from "@/lib/trpc";
+import type { AppRouter } from "@/server/routers/_app";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,11 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+
+type RouterOutputs = inferRouterOutputs<AppRouter>;
+type OrderDetail = RouterOutputs["orders"]["getById"];
+type OrderCustomer = NonNullable<OrderDetail["customers"]>;
+type OrderItem = OrderDetail["order_items"][number];
 
 export default function OrderDetailPage({
   params,
@@ -81,18 +88,27 @@ export default function OrderDetailPage({
   const handleStripeCheckout = async () => {
     setIsCheckoutLoading(true);
     setCheckoutError(null);
+
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId: id }),
       });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
+
+      const data: { url?: string; error?: string } = await res.json();
+
+      if (!res.ok) {
         setCheckoutError(data.error ?? "Failed to create checkout session");
+        return;
       }
+
+      if (data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+
+      setCheckoutError(data.error ?? "Failed to create checkout session");
     } catch {
       setCheckoutError("Failed to create checkout session");
     } finally {
@@ -101,8 +117,13 @@ export default function OrderDetailPage({
   };
 
   const nextStatuses = STATUS_FLOW[order.status as string] ?? [];
-  const customer = order.customers as Record<string, string> | null;
-  const orderItems = (order.order_items ?? []) as Array<Record<string, unknown>>;
+  const customer: OrderCustomer | null = order.customers;
+  const orderItems: OrderItem[] = order.order_items ?? [];
+  const taxAmount = typeof order.tax === "string" ? Number.parseFloat(order.tax) : Number(order.tax ?? 0);
+  const deliveryFeeAmount =
+    typeof order.delivery_fee === "string"
+      ? Number.parseFloat(order.delivery_fee)
+      : Number(order.delivery_fee ?? 0);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -311,13 +332,13 @@ export default function OrderDetailPage({
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>{formatCurrency(order.subtotal as string)}</span>
                 </div>
-                {parseFloat(order.tax as string) > 0 && (
+                {taxAmount > 0 && (
                   <div className="flex w-48 justify-between text-sm">
                     <span className="text-muted-foreground">Tax</span>
                     <span>{formatCurrency(order.tax as string)}</span>
                   </div>
                 )}
-                {parseFloat(order.delivery_fee as string) > 0 && (
+                {deliveryFeeAmount > 0 && (
                   <div className="flex w-48 justify-between text-sm">
                     <span className="text-muted-foreground">Delivery Fee</span>
                     <span>{formatCurrency(order.delivery_fee as string)}</span>
