@@ -2,8 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { supabaseAdmin } from "@/lib/supabase";
-
-const USER_ID = "00000000-0000-0000-0000-000000000000";
+import { DEFAULT_USER_ID, ensureDefaultUser } from "@/lib/default-user";
 
 export const calendarRouter = createTRPCRouter({
   getSlots: publicProcedure
@@ -17,7 +16,7 @@ export const calendarRouter = createTRPCRouter({
       const { data, error } = await supabaseAdmin
         .from("calendar_slots")
         .select("*")
-        .eq("user_id", USER_ID)
+        .eq("user_id", DEFAULT_USER_ID)
         .gte("date", input.startDate)
         .lte("date", input.endDate)
         .order("date", { ascending: true });
@@ -38,7 +37,7 @@ export const calendarRouter = createTRPCRouter({
       const { data, error } = await supabaseAdmin
         .from("calendar_slots")
         .select("*")
-        .eq("user_id", USER_ID)
+        .eq("user_id", DEFAULT_USER_ID)
         .eq("date", input.date)
         .maybeSingle();
 
@@ -63,15 +62,17 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
+      await ensureDefaultUser();
+
       const { data: existing } = await supabaseAdmin
         .from("calendar_slots")
         .select("id")
-        .eq("user_id", USER_ID)
+        .eq("user_id", DEFAULT_USER_ID)
         .eq("date", input.date)
         .maybeSingle();
 
       const payload = {
-        user_id: USER_ID,
+        user_id: DEFAULT_USER_ID,
         date: input.date,
         max_orders: input.maxOrders,
         is_blocked: input.isBlocked,
@@ -113,10 +114,12 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
+      await ensureDefaultUser();
+
       const { data: existing } = await supabaseAdmin
         .from("calendar_slots")
         .select("id")
-        .eq("user_id", USER_ID)
+        .eq("user_id", DEFAULT_USER_ID)
         .eq("date", input.date)
         .maybeSingle();
 
@@ -135,7 +138,7 @@ export const calendarRouter = createTRPCRouter({
         result = await supabaseAdmin
           .from("calendar_slots")
           .insert({
-            user_id: USER_ID,
+            user_id: DEFAULT_USER_ID,
             date: input.date,
             is_blocked: true,
             block_reason: input.reason ?? null,
@@ -160,7 +163,7 @@ export const calendarRouter = createTRPCRouter({
       const { data: existing } = await supabaseAdmin
         .from("calendar_slots")
         .select("id")
-        .eq("user_id", USER_ID)
+        .eq("user_id", DEFAULT_USER_ID)
         .eq("date", input.date)
         .maybeSingle();
 

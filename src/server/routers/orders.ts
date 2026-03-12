@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { supabaseAdmin } from "@/lib/supabase";
 import { TRPCError } from "@trpc/server";
+import { DEFAULT_USER_ID, ensureDefaultUser } from "@/lib/default-user";
 
 function generateOrderNumber(): string {
   const now = new Date();
@@ -98,12 +99,12 @@ export const ordersRouter = createTRPCRouter({
       const total = subtotal; // No tax/delivery fee for now
 
       // TODO: Replace with real user id from auth
-      const userId = "00000000-0000-0000-0000-000000000000";
+      await ensureDefaultUser();
 
       const { data: order, error: orderError } = await supabaseAdmin
         .from("orders")
         .insert({
-          user_id: userId,
+          user_id: DEFAULT_USER_ID,
           customer_id: input.customerId || null,
           order_number: generateOrderNumber(),
           status: "pending",

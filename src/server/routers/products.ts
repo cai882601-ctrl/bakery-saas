@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { supabaseAdmin } from "@/lib/supabase";
 import { TRPCError } from "@trpc/server";
+import { DEFAULT_USER_ID, ensureDefaultUser } from "@/lib/default-user";
 
 export const productsRouter = createTRPCRouter({
   list: publicProcedure
@@ -55,12 +56,12 @@ export const productsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const userId = "00000000-0000-0000-0000-000000000000";
+      await ensureDefaultUser();
 
       const { data, error } = await supabaseAdmin
         .from("products")
         .insert({
-          user_id: userId,
+          user_id: DEFAULT_USER_ID,
           name: input.name,
           description: input.description || null,
           category: input.category || null,
