@@ -140,6 +140,7 @@ export const orders = pgTable("orders", {
   deliveryTime: varchar("delivery_time", { length: 20 }),
   deliveryMethod: varchar("delivery_method", { length: 50 }).default("pickup"),
   // pickup, delivery
+  stripeCheckoutSessionId: varchar("stripe_checkout_session_id", { length: 255 }),
   paidAt: timestamp("paid_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

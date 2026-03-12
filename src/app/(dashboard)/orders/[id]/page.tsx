@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc";
@@ -22,6 +22,8 @@ import {
   ArrowLeft,
   Calendar,
   Clock,
+  CreditCard,
+  Loader2,
   MapPin,
   MessageSquare,
   Package,
@@ -64,6 +66,29 @@ export default function OrderDetailPage({
       </div>
     );
   }
+
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+
+  const handleStripeCheckout = async () => {
+    setIsCheckoutLoading(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: id }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error ?? "Failed to create checkout session");
+      }
+    } catch {
+      alert("Failed to create checkout session");
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  };
 
   const nextStatuses = STATUS_FLOW[order.status as string] ?? [];
   const customer = order.customers as Record<string, string> | null;
@@ -273,6 +298,20 @@ export default function OrderDetailPage({
                   <span>Total</span>
                   <span>{formatCurrency(order.total as string)}</span>
                 </div>
+                {!order.paid_at && order.status !== "cancelled" && (
+                  <Button
+                    className="mt-3 w-48"
+                    onClick={handleStripeCheckout}
+                    disabled={isCheckoutLoading}
+                  >
+                    {isCheckoutLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CreditCard className="mr-2 h-4 w-4" />
+                    )}
+                    {isCheckoutLoading ? "Redirecting…" : "Pay with Stripe"}
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
