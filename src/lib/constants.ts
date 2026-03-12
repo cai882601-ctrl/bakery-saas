@@ -24,6 +24,28 @@ export const ORDER_SOURCES = [
   { value: "email", label: "Email" },
 ] as const;
 
+export const PRODUCT_CATEGORIES = [
+  { value: "cakes", label: "Cakes" },
+  { value: "cookies", label: "Cookies" },
+  { value: "bread", label: "Bread" },
+  { value: "pastries", label: "Pastries" },
+  { value: "pies", label: "Pies" },
+  { value: "other", label: "Other" },
+] as const;
+
+export const INGREDIENT_UNITS = [
+  { value: "kg", label: "kg" },
+  { value: "g", label: "g" },
+  { value: "lb", label: "lb" },
+  { value: "oz", label: "oz" },
+  { value: "ml", label: "mL" },
+  { value: "L", label: "L" },
+  { value: "cup", label: "cup" },
+  { value: "tbsp", label: "tbsp" },
+  { value: "tsp", label: "tsp" },
+  { value: "each", label: "each" },
+] as const;
+
 export const STATUS_FLOW: Record<string, string[]> = {
   pending: ["confirmed", "cancelled"],
   confirmed: ["in_progress", "cancelled"],

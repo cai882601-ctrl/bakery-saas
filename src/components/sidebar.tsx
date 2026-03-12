@@ -10,6 +10,7 @@ import {
   CalendarDays,
   Settings,
   LayoutDashboard,
+  Wheat,
 } from "lucide-react";
 
 const navItems = [
@@ -17,6 +18,7 @@ const navItems = [
   { href: "/orders", label: "Orders", icon: ClipboardList },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/products", label: "Products", icon: CakeSlice },
+  { href: "/ingredients", label: "Ingredients", icon: Wheat },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
