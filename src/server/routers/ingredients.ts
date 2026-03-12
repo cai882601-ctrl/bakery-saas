@@ -20,8 +20,10 @@ export const ingredientsRouter = createTRPCRouter({
         .select("*", { count: "exact" });
 
       if (input.search) {
+        // Escape special PostgREST filter characters to prevent filter injection
+        const escaped = input.search.replace(/[%_\\(),."']/g, (ch) => `\\${ch}`);
         query = query.or(
-          `name.ilike.%${input.search}%,supplier.ilike.%${input.search}%`
+          `name.ilike.%${escaped}%,supplier.ilike.%${escaped}%`
         );
       }
 

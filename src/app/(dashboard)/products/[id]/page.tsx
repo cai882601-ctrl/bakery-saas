@@ -183,7 +183,7 @@ export default function ProductDetailPage({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Link href="/products">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" aria-label="Back to products">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
@@ -232,21 +232,23 @@ export default function ProductDetailPage({
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Name</Label>
+              <Label htmlFor="edit-name">Name</Label>
               <Input
+                id="edit-name"
                 value={editForm.name}
                 onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label htmlFor="edit-description">Description</Label>
               <Textarea
+                id="edit-description"
                 value={editForm.description}
                 onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label htmlFor="edit-category">Category</Label>
               <Select
                 value={editForm.category}
                 onValueChange={(v) => setEditForm((f) => ({ ...f, category: v ?? "" }))}
@@ -264,8 +266,9 @@ export default function ProductDetailPage({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Base Price ($)</Label>
+              <Label htmlFor="edit-base-price">Base Price ($)</Label>
               <Input
+                id="edit-base-price"
                 type="number"
                 step="0.01"
                 value={editForm.basePrice}
@@ -273,8 +276,9 @@ export default function ProductDetailPage({
               />
             </div>
             <div className="space-y-2">
-              <Label>Prep Time (minutes)</Label>
+              <Label htmlFor="edit-prep-time">Prep Time (minutes)</Label>
               <Input
+                id="edit-prep-time"
                 type="number"
                 value={editForm.prepTimeMinutes}
                 onChange={(e) => setEditForm((f) => ({ ...f, prepTimeMinutes: e.target.value }))}
@@ -381,6 +385,7 @@ export default function ProductDetailPage({
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
+                              aria-label={`Remove ${ing.name as string}`}
                               onClick={() =>
                                 removeIngredient.mutate({ productIngredientId: pi.id as string })
                               }
@@ -398,11 +403,9 @@ export default function ProductDetailPage({
 
             {/* Add Ingredient Popover */}
             <Popover open={addIngOpen} onOpenChange={setAddIngOpen}>
-              <PopoverTrigger>
-                <Button variant="outline" className="w-full">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Ingredient
-                </Button>
+              <PopoverTrigger className="inline-flex w-full items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background hover:bg-accent hover:text-accent-foreground">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Ingredient
               </PopoverTrigger>
               <PopoverContent className="w-[300px] p-0">
                 <AddIngredientForm

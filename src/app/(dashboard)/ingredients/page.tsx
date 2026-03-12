@@ -27,7 +27,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/constants";
 import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
@@ -151,8 +150,9 @@ export default function IngredientsPage() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Name *</Label>
+                <Label htmlFor="ing-name">Name *</Label>
                 <Input
+                  id="ing-name"
                   placeholder="e.g., All-Purpose Flour"
                   value={formData.name}
                   onChange={(e) =>
@@ -163,7 +163,7 @@ export default function IngredientsPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Unit</Label>
+                  <Label htmlFor="ing-unit">Unit</Label>
                   <Select
                     value={formData.unit}
                     onValueChange={(v) =>
@@ -184,8 +184,9 @@ export default function IngredientsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Cost per Unit *</Label>
+                  <Label htmlFor="ing-cost">Cost per Unit *</Label>
                   <Input
+                    id="ing-cost"
                     type="number"
                     step="0.01"
                     placeholder="0.00"
@@ -198,8 +199,9 @@ export default function IngredientsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Supplier</Label>
+                <Label htmlFor="ing-supplier">Supplier</Label>
                 <Input
+                  id="ing-supplier"
                   placeholder="e.g., Local Bakery Supply"
                   value={formData.supplier}
                   onChange={(e) =>
@@ -210,8 +212,9 @@ export default function IngredientsPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>In Stock</Label>
+                  <Label htmlFor="ing-stock">In Stock</Label>
                   <Input
+                    id="ing-stock"
                     type="number"
                     step="0.1"
                     placeholder="0"
@@ -223,8 +226,9 @@ export default function IngredientsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Low Stock Threshold</Label>
+                  <Label htmlFor="ing-threshold">Low Stock Threshold</Label>
                   <Input
+                    id="ing-threshold"
                     type="number"
                     step="0.1"
                     placeholder="0"
@@ -329,6 +333,7 @@ export default function IngredientsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            aria-label={`Edit ${ing.name as string}`}
                             onClick={() => handleOpenDialog(ing)}
                           >
                             <Pencil className="h-4 w-4" />
@@ -349,6 +354,7 @@ export default function IngredientsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              aria-label={`Delete ${ing.name as string}`}
                               onClick={() =>
                                 setDeleteConfirm(ing.id as string)
                               }
