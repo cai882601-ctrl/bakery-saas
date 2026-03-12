@@ -29,8 +29,7 @@ import {
 } from "@/components/ui/command";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ORDER_SOURCES, formatCurrency } from "@/lib/constants";
-import { ArrowLeft, Check, ChevronsUpDown, Plus, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowLeft, ChevronsUpDown, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 interface OrderItem {
@@ -140,13 +139,10 @@ export default function NewOrderPage() {
             <div className="space-y-2">
               <Label>Customer</Label>
               <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={customerOpen}
-                    className="w-full justify-between font-normal"
-                  >
+                <PopoverTrigger
+                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <span className="truncate">
                     {customerId === "walk-in"
                       ? "Walk-in Customer"
                       : customerId
@@ -154,10 +150,10 @@ export default function NewOrderPage() {
                             (c: Record<string, unknown>) => c.id === customerId
                           )?.name as string) ?? "Select customer..."
                         : "Select customer (optional)"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <PopoverContent className="w-72 p-0" align="start">
                   <Command>
                     <CommandInput placeholder="Search by name, email, phone..." />
                     <CommandList>
@@ -165,41 +161,31 @@ export default function NewOrderPage() {
                       <CommandGroup>
                         <CommandItem
                           value="walk-in"
+                          data-checked={customerId === "walk-in" || undefined}
                           onSelect={() => {
                             setCustomerId("walk-in");
                             setCustomerOpen(false);
                           }}
                         >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              customerId === "walk-in" ? "opacity-100" : "opacity-0"
-                            )}
-                          />
                           Walk-in Customer
                         </CommandItem>
                         {customersData?.customers.map((c: Record<string, unknown>) => (
                           <CommandItem
                             key={c.id as string}
                             value={`${c.name as string} ${(c.email as string) || ""} ${(c.phone as string) || ""}`}
+                            data-checked={customerId === (c.id as string) || undefined}
                             onSelect={() => {
                               setCustomerId(c.id as string);
                               setCustomerOpen(false);
                             }}
                           >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                customerId === (c.id as string) ? "opacity-100" : "opacity-0"
-                              )}
-                            />
                             <div className="flex flex-col">
                               <span>{c.name as string}</span>
-                              {(c.phone || c.email) && (
+                              {(c.phone || c.email) ? (
                                 <span className="text-xs text-muted-foreground">
-                                  {[c.phone, c.email].filter(Boolean).join(" · ")}
+                                  {[c.phone as string, c.email as string].filter(Boolean).join(" · ")}
                                 </span>
-                              )}
+                              ) : null}
                             </div>
                           </CommandItem>
                         ))}
