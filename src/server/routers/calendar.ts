@@ -1,5 +1,9 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "../trpc";
+import { supabaseAdmin } from "@/lib/supabase";
+
+const USER_ID = "00000000-0000-0000-0000-000000000000";
 
 export const calendarRouter = createTRPCRouter({
   getSlots: publicProcedure
@@ -10,7 +14,42 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      return { slots: [] };
+      const { data, error } = await supabaseAdmin
+        .from("calendar_slots")
+        .select("*")
+        .eq("user_id", USER_ID)
+        .gte("date", input.startDate)
+        .lte("date", input.endDate)
+        .order("date", { ascending: true });
+
+      if (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error.message,
+        });
+      }
+
+      return { slots: data ?? [] };
+    }),
+
+  getSlotByDate: publicProcedure
+    .input(z.object({ date: z.string() }))
+    .query(async ({ input }) => {
+      const { data, error } = await supabaseAdmin
+        .from("calendar_slots")
+        .select("*")
+        .eq("user_id", USER_ID)
+        .eq("date", input.date)
+        .maybeSingle();
+
+      if (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error.message,
+        });
+      }
+
+      return { slot: data };
     }),
 
   upsertSlot: publicProcedure
@@ -24,7 +63,46 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      return { success: true };
+      const { data: existing } = await supabaseAdmin
+        .from("calendar_slots")
+        .select("id")
+        .eq("user_id", USER_ID)
+        .eq("date", input.date)
+        .maybeSingle();
+
+      const payload = {
+        user_id: USER_ID,
+        date: input.date,
+        max_orders: input.maxOrders,
+        is_blocked: input.isBlocked,
+        block_reason: input.blockReason ?? null,
+        notes: input.notes ?? null,
+      };
+
+      let result;
+      if (existing) {
+        result = await supabaseAdmin
+          .from("calendar_slots")
+          .update(payload)
+          .eq("id", existing.id)
+          .select()
+          .single();
+      } else {
+        result = await supabaseAdmin
+          .from("calendar_slots")
+          .insert(payload)
+          .select()
+          .single();
+      }
+
+      if (result.error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: result.error.message,
+        });
+      }
+
+      return { slot: result.data };
     }),
 
   blockDate: publicProcedure
@@ -35,12 +113,81 @@ export const calendarRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      return { success: true };
+      const { data: existing } = await supabaseAdmin
+        .from("calendar_slots")
+        .select("id")
+        .eq("user_id", USER_ID)
+        .eq("date", input.date)
+        .maybeSingle();
+
+      let result;
+      if (existing) {
+        result = await supabaseAdmin
+          .from("calendar_slots")
+          .update({
+            is_blocked: true,
+            block_reason: input.reason ?? null,
+          })
+          .eq("id", existing.id)
+          .select()
+          .single();
+      } else {
+        result = await supabaseAdmin
+          .from("calendar_slots")
+          .insert({
+            user_id: USER_ID,
+            date: input.date,
+            is_blocked: true,
+            block_reason: input.reason ?? null,
+          })
+          .select()
+          .single();
+      }
+
+      if (result.error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: result.error.message,
+        });
+      }
+
+      return { slot: result.data };
     }),
 
   unblockDate: publicProcedure
     .input(z.object({ date: z.string() }))
     .mutation(async ({ input }) => {
-      return { success: true };
+      const { data: existing } = await supabaseAdmin
+        .from("calendar_slots")
+        .select("id")
+        .eq("user_id", USER_ID)
+        .eq("date", input.date)
+        .maybeSingle();
+
+      if (!existing) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No slot found for this date",
+        });
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from("calendar_slots")
+        .update({
+          is_blocked: false,
+          block_reason: null,
+        })
+        .eq("id", existing.id)
+        .select()
+        .single();
+
+      if (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error.message,
+        });
+      }
+
+      return { slot: data };
     }),
 });
