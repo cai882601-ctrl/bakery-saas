@@ -14,9 +14,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ORDER_SOURCES, formatCurrency } from "@/lib/constants";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, ChevronsUpDown, Plus, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 interface OrderItem {
@@ -30,6 +44,7 @@ interface OrderItem {
 export default function NewOrderPage() {
   const router = useRouter();
   const [customerId, setCustomerId] = useState<string>("");
+  const [customerOpen, setCustomerOpen] = useState(false);
   const [source, setSource] = useState("direct");
   const [deliveryDate, setDeliveryDate] = useState("");
   const [deliveryTime, setDeliveryTime] = useState("");
@@ -124,19 +139,75 @@ export default function NewOrderPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Customer</Label>
-              <Select value={customerId} onValueChange={(v) => setCustomerId(v ?? "")}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select customer (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="walk-in">Walk-in Customer</SelectItem>
-                  {customersData?.customers.map((c: Record<string, unknown>) => (
-                    <SelectItem key={c.id as string} value={c.id as string}>
-                      {c.name as string}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={customerOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    {customerId === "walk-in"
+                      ? "Walk-in Customer"
+                      : customerId
+                        ? (customersData?.customers.find(
+                            (c: Record<string, unknown>) => c.id === customerId
+                          )?.name as string) ?? "Select customer..."
+                        : "Select customer (optional)"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search by name, email, phone..." />
+                    <CommandList>
+                      <CommandEmpty>No customer found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="walk-in"
+                          onSelect={() => {
+                            setCustomerId("walk-in");
+                            setCustomerOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              customerId === "walk-in" ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          Walk-in Customer
+                        </CommandItem>
+                        {customersData?.customers.map((c: Record<string, unknown>) => (
+                          <CommandItem
+                            key={c.id as string}
+                            value={`${c.name as string} ${(c.email as string) || ""} ${(c.phone as string) || ""}`}
+                            onSelect={() => {
+                              setCustomerId(c.id as string);
+                              setCustomerOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                customerId === (c.id as string) ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex flex-col">
+                              <span>{c.name as string}</span>
+                              {(c.phone || c.email) && (
+                                <span className="text-xs text-muted-foreground">
+                                  {[c.phone, c.email].filter(Boolean).join(" · ")}
+                                </span>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label>Order Source</Label>

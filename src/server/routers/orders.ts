@@ -15,6 +15,7 @@ export const ordersRouter = createTRPCRouter({
     .input(
       z.object({
         status: z.string().optional(),
+        customerId: z.string().uuid().optional(),
         search: z.string().optional(),
         sortBy: z.enum(["created_at", "total", "delivery_date"]).default("created_at"),
         sortOrder: z.enum(["asc", "desc"]).default("desc"),
@@ -29,6 +30,10 @@ export const ordersRouter = createTRPCRouter({
 
       if (input.status) {
         query = query.eq("status", input.status);
+      }
+
+      if (input.customerId) {
+        query = query.eq("customer_id", input.customerId);
       }
 
       if (input.search) {

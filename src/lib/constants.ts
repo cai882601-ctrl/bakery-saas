@@ -7,6 +7,14 @@ export const ORDER_STATUSES = [
   { value: "cancelled", label: "Cancelled", color: "bg-red-100 text-red-800" },
 ] as const;
 
+export const CUSTOMER_SOURCES = [
+  { value: "direct", label: "Direct" },
+  { value: "instagram", label: "Instagram" },
+  { value: "facebook", label: "Facebook" },
+  { value: "website", label: "Website" },
+  { value: "referral", label: "Referral" },
+] as const;
+
 export const ORDER_SOURCES = [
   { value: "direct", label: "Direct" },
   { value: "instagram", label: "Instagram" },
