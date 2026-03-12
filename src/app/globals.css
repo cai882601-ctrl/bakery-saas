@@ -127,3 +127,18 @@
     @apply font-sans;
   }
 }
+
+/* Mobile touch targets — ensure min 44px tap area on touch devices */
+@media (pointer: coarse) {
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Inputs and textareas get min-height only */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea {
+    min-height: 44px;
+  }
+}

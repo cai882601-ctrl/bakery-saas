@@ -140,7 +140,7 @@ export default function NewOrderPage() {
               <Label>Customer</Label>
               <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
                 <PopoverTrigger
-                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="flex h-11 lg:h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-base lg:text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                   <span className="truncate">
                     {customerId === "walk-in"

@@ -128,7 +128,7 @@ export default function OrdersPage() {
                 <TableHead>Status</TableHead>
                 <TableHead>
                   <button
-                    className="flex items-center gap-1 hover:text-foreground"
+                    className="flex h-full w-full items-center gap-1 hover:text-foreground"
                     onClick={() => toggleSort("total")}
                   >
                     Total
@@ -137,7 +137,7 @@ export default function OrdersPage() {
                 </TableHead>
                 <TableHead className="hidden sm:table-cell">
                   <button
-                    className="flex items-center gap-1 hover:text-foreground"
+                    className="flex h-full w-full items-center gap-1 hover:text-foreground"
                     onClick={() => toggleSort("delivery_date")}
                   >
                     Delivery
@@ -146,7 +146,7 @@ export default function OrdersPage() {
                 </TableHead>
                 <TableHead className="hidden lg:table-cell">
                   <button
-                    className="flex items-center gap-1 hover:text-foreground"
+                    className="flex h-full w-full items-center gap-1 hover:text-foreground"
                     onClick={() => toggleSort("created_at")}
                   >
                     Created
