@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { stripe, formatStripeLineItems } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
@@ -10,14 +10,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "orderId is required" }, { status: 400 });
     }
 
-    // Fetch order from database
+    // Fetch order from database with related data
     const { data: order, error } = await supabaseAdmin
       .from("orders")
-      .select("*, order_items(*)")
+      .select("*, order_items(*), customers(name, email, phone)")
       .eq("id", orderId)
       .single();
 
     if (error || !order) {
+      console.error("Order fetch error:", error);
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
@@ -25,65 +26,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Order is already paid" }, { status: 400 });
     }
 
+    const order_items = (order.order_items || []) as Array<{
+      product_name: string;
+      unit_price: string | number;
+      quantity: number;
+      customizations?: string | null;
+    }>;
+
     // Build line items from order items
-    const lineItems = (order.order_items as Array<Record<string, unknown>>).map(
-      (item) => ({
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: item.product_name as string,
-            ...(item.customizations
-              ? { description: item.customizations as string }
-              : {}),
-          },
-          unit_amount: Math.round(parseFloat(item.unit_price as string) * 100),
-        },
-        quantity: item.quantity as number,
-      })
-    );
+    const lineItems = formatStripeLineItems({
+      tax: order.tax,
+      delivery_fee: order.delivery_fee,
+      order_items,
+    });
 
-    // Add tax as a line item if present
-    if (parseFloat(order.tax as string) > 0) {
-      lineItems.push({
-        price_data: {
-          currency: "usd",
-          product_data: { name: "Tax" },
-          unit_amount: Math.round(parseFloat(order.tax as string) * 100),
-        },
-        quantity: 1,
-      });
+    if (lineItems.length === 0) {
+      return NextResponse.json({ error: "Order must have at least one item" }, { status: 400 });
     }
 
-    // Add delivery fee as a line item if present
-    if (parseFloat(order.delivery_fee as string) > 0) {
-      lineItems.push({
-        price_data: {
-          currency: "usd",
-          product_data: { name: "Delivery Fee" },
-          unit_amount: Math.round(parseFloat(order.delivery_fee as string) * 100),
-        },
-        quantity: 1,
-      });
-    }
+    const customer = order.customers as { name: string; email?: string } | null;
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
+      customer_email: customer?.email || undefined,
       success_url: `${req.nextUrl.origin}/orders/${orderId}?payment=success`,
       cancel_url: `${req.nextUrl.origin}/orders/${orderId}?payment=cancelled`,
       metadata: {
         orderId,
-        orderNumber: order.order_number as string,
+        orderNumber: order.order_number,
+        customerName: customer?.name ?? "Walk-in Customer",
       },
     });
 
     // Save checkout session ID to order
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from("orders")
       .update({ stripe_checkout_session_id: session.id })
       .eq("id", orderId);
+
+    if (updateError) {
+      console.error("Failed to save checkout session ID:", updateError);
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (err) {

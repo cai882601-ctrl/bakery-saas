@@ -64,6 +64,7 @@ The CLI will print a webhook signing secret (`whsec_...`) — use that as `STRIP
 |---|---|
 | `checkout.session.completed` | Marks order as paid |
 | `payment_intent.succeeded` | Logged (extend as needed) |
+| `payment_intent.payment_failed` | Logged for debugging |
 
 ## Deploy on Vercel
 

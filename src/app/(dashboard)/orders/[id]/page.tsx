@@ -1,8 +1,8 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,11 +24,12 @@ import {
   Clock,
   CreditCard,
   Loader2,
-  MapPin,
   MessageSquare,
   Package,
   User,
   Truck,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 
 export default function OrderDetailPage({
@@ -37,8 +38,12 @@ export default function OrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const utils = trpc.useUtils();
+
+  const paymentStatus = searchParams.get("payment");
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const { data: order, isLoading } = trpc.orders.getById.useQuery({ id });
   const updateStatus = trpc.orders.updateStatus.useMutation({
@@ -47,6 +52,12 @@ export default function OrderDetailPage({
       utils.orders.list.invalidate();
     },
   });
+
+  useEffect(() => {
+    if (paymentStatus === "success") {
+      utils.orders.getById.invalidate({ id });
+    }
+  }, [paymentStatus, id, utils.orders.getById]);
 
   if (isLoading) {
     return (
@@ -67,10 +78,9 @@ export default function OrderDetailPage({
     );
   }
 
-  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
-
   const handleStripeCheckout = async () => {
     setIsCheckoutLoading(true);
+    setCheckoutError(null);
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -81,10 +91,10 @@ export default function OrderDetailPage({
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error ?? "Failed to create checkout session");
+        setCheckoutError(data.error ?? "Failed to create checkout session");
       }
     } catch {
-      alert("Failed to create checkout session");
+      setCheckoutError("Failed to create checkout session");
     } finally {
       setIsCheckoutLoading(false);
     }
@@ -96,6 +106,26 @@ export default function OrderDetailPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      {/* Payment Notifications */}
+      {paymentStatus === "success" && (
+        <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800 dark:border-green-900/50 dark:bg-green-900/20 dark:text-green-400">
+          <CheckCircle2 className="h-5 w-5" />
+          <p className="text-sm font-medium">Payment successful! The order has been marked as paid.</p>
+        </div>
+      )}
+      {paymentStatus === "cancelled" && (
+        <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-400">
+          <AlertCircle className="h-5 w-5" />
+          <p className="text-sm font-medium">Payment was cancelled. You can try again whenever you&apos;re ready.</p>
+        </div>
+      )}
+      {checkoutError && (
+        <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400">
+          <AlertCircle className="h-5 w-5" />
+          <p className="text-sm font-medium">{checkoutError}</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
@@ -299,18 +329,25 @@ export default function OrderDetailPage({
                   <span>{formatCurrency(order.total as string)}</span>
                 </div>
                 {!order.paid_at && order.status !== "cancelled" && (
-                  <Button
-                    className="mt-3 w-48"
-                    onClick={handleStripeCheckout}
-                    disabled={isCheckoutLoading}
-                  >
-                    {isCheckoutLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <CreditCard className="mr-2 h-4 w-4" />
+                  <div className="mt-3 flex flex-col gap-2 w-48">
+                    <Button
+                      className="w-full"
+                      onClick={handleStripeCheckout}
+                      disabled={isCheckoutLoading}
+                    >
+                      {isCheckoutLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CreditCard className="mr-2 h-4 w-4" />
+                      )}
+                      {isCheckoutLoading ? "Redirecting…" : "Pay with Stripe"}
+                    </Button>
+                    {order.stripe_checkout_session_id && !isCheckoutLoading && (
+                      <p className="text-[10px] text-center text-muted-foreground">
+                        Previous checkout started. Clicking again will create a new session.
+                      </p>
                     )}
-                    {isCheckoutLoading ? "Redirecting…" : "Pay with Stripe"}
-                  </Button>
+                  </div>
                 )}
               </div>
             </div>
