@@ -207,7 +207,7 @@ export default function DashboardPage() {
                           </div>
                         ))
                     ) : recentOrdersQuery.data?.orders?.length ? (
-                      (recentOrdersQuery.data.orders as any[]).map((order) => (
+                      recentOrdersQuery.data.orders.map((order) => (
                         <Link
                           key={order.id}
                           href={`/orders/${order.id}`}

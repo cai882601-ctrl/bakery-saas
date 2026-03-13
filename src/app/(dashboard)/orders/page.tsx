@@ -132,7 +132,7 @@ export default function OrdersPage() {
                   : "No orders yet."}
               </div>
             ) : (
-              data.orders.map((order: any) => (
+              data.orders.map((order) => (
                 <Link
                   key={order.id}
                   href={`/orders/${order.id}`}
@@ -231,7 +231,7 @@ export default function OrdersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data.orders.map((order: any) => (
+                  data.orders.map((order) => (
                     <TableRow
                       key={order.id}
                       className="cursor-pointer hover:bg-muted/50"

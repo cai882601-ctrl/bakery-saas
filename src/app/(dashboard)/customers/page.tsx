@@ -161,7 +161,7 @@ export default function CustomersPage() {
                   : "No customers yet."}
               </div>
             ) : (
-              data.customers.map((customer: any) => (
+              data.customers.map((customer) => (
                 <Link
                   key={customer.id}
                   href={`/customers/${customer.id}`}
@@ -265,7 +265,7 @@ export default function CustomersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data.customers.map((customer: any) => (
+                  data.customers.map((customer) => (
                     <TableRow
                       key={customer.id}
                       className="cursor-pointer hover:bg-muted/50"
