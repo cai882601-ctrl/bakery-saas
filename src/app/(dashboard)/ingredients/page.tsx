@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/constants";
-import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, Search } from "lucide-react";
 
 const UNITS = [
   { value: "kg", label: "Kilogram (kg)" },
@@ -42,6 +42,8 @@ const UNITS = [
 ];
 
 export default function IngredientsPage() {
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -122,7 +124,13 @@ export default function IngredientsPage() {
     }
   }
 
-  const ingredients = (data?.ingredients ?? []) as Array<Record<string, unknown>>;
+  const allIngredients = (data?.ingredients ?? []) as Array<Record<string, unknown>>;
+  const ingredients = allIngredients.filter((ing) => {
+    if (!search) return true;
+    return (ing.name as string).toLowerCase().includes(search.toLowerCase());
+  });
+
+  const handleSearch = () => setSearch(searchInput);
 
   return (
     <div className="space-y-6">
@@ -130,7 +138,7 @@ export default function IngredientsPage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Ingredients</h2>
           <p className="text-muted-foreground">
-            {ingredients.length} ingredients in inventory
+            {ingredients.length} ingredient{ingredients.length !== 1 ? "s" : ""}{search ? " found" : " in inventory"}
           </p>
         </div>
         <Button onClick={() => {
@@ -170,7 +178,7 @@ export default function IngredientsPage() {
                       setFormData((f) => ({ ...f, unit: v ?? "g" }))
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="ing-unit" aria-label="Unit">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -261,6 +269,28 @@ export default function IngredientsPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Search */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <Input
+                placeholder="Search by name..."
+                aria-label="Search ingredients"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className="pl-10"
+              />
+            </div>
+            <Button variant="secondary" onClick={handleSearch}>
+              Search
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Table */}
       <Card>

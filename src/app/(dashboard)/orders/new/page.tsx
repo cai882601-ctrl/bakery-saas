@@ -119,7 +119,7 @@ export default function NewOrderPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/orders">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" aria-label="Go back to orders">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
@@ -137,9 +137,10 @@ export default function NewOrderPage() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Customer</Label>
+              <Label id="customer-label">Customer</Label>
               <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
                 <PopoverTrigger
+                  aria-labelledby="customer-label"
                   className="flex h-11 lg:h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-base lg:text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                   <span className="truncate">
@@ -151,7 +152,7 @@ export default function NewOrderPage() {
                           )?.name as string) ?? "Select customer..."
                         : "Select customer (optional)"}
                   </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
                 </PopoverTrigger>
                 <PopoverContent className="w-72 p-0" align="start">
                   <Command>
@@ -196,9 +197,9 @@ export default function NewOrderPage() {
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label>Order Source</Label>
+              <Label htmlFor="order-source">Order Source</Label>
               <Select value={source} onValueChange={(v) => setSource(v ?? "direct")}>
-                <SelectTrigger>
+                <SelectTrigger id="order-source" aria-label="Order Source">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -214,28 +215,31 @@ export default function NewOrderPage() {
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label>Delivery Date</Label>
+              <Label htmlFor="delivery-date">Delivery Date</Label>
               <Input
+                id="delivery-date"
                 type="date"
+                lang="en"
                 value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label>Delivery Time</Label>
+              <Label htmlFor="delivery-time">Delivery Time</Label>
               <Input
+                id="delivery-time"
                 type="time"
                 value={deliveryTime}
                 onChange={(e) => setDeliveryTime(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label>Method</Label>
+              <Label htmlFor="delivery-method">Method</Label>
               <Select
                 value={deliveryMethod}
                 onValueChange={(v) => setDeliveryMethod(v as "pickup" | "delivery")}
               >
-                <SelectTrigger>
+                <SelectTrigger id="delivery-method" aria-label="Delivery Method">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -247,8 +251,9 @@ export default function NewOrderPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Notes</Label>
+            <Label htmlFor="notes">Notes</Label>
             <Textarea
+              id="notes"
               placeholder="Special instructions, decorations, allergies..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -262,7 +267,7 @@ export default function NewOrderPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Order Items</CardTitle>
           <Button variant="outline" size="sm" onClick={addItem}>
-            <Plus className="mr-1 h-4 w-4" />
+            <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
             Add Item
           </Button>
         </CardHeader>
@@ -271,14 +276,16 @@ export default function NewOrderPage() {
             <div
               key={item.key}
               className="grid gap-3 rounded-lg border p-4 sm:grid-cols-[1fr_1fr_80px_100px_40px]"
+              role="group"
+              aria-label={`Order item ${idx + 1}`}
             >
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Product</Label>
+                <Label className="text-xs text-muted-foreground" htmlFor={`product-${item.key}`}>Product</Label>
                 <Select
                   value={item.productId ?? "custom"}
                   onValueChange={(v) => updateItem(item.key, "productId", v === "custom" ? null : v)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id={`product-${item.key}`} aria-label="Select product">
                     <SelectValue placeholder="Select product" />
                   </SelectTrigger>
                   <SelectContent>
@@ -292,16 +299,18 @@ export default function NewOrderPage() {
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Name</Label>
+                <Label className="text-xs text-muted-foreground" htmlFor={`name-${item.key}`}>Name</Label>
                 <Input
+                  id={`name-${item.key}`}
                   placeholder="Item name"
                   value={item.productName}
                   onChange={(e) => updateItem(item.key, "productName", e.target.value)}
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Qty</Label>
+                <Label className="text-xs text-muted-foreground" htmlFor={`qty-${item.key}`}>Qty</Label>
                 <Input
+                  id={`qty-${item.key}`}
                   type="number"
                   min={1}
                   value={item.quantity}
@@ -309,8 +318,9 @@ export default function NewOrderPage() {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Price</Label>
+                <Label className="text-xs text-muted-foreground" htmlFor={`price-${item.key}`}>Price</Label>
                 <Input
+                  id={`price-${item.key}`}
                   type="number"
                   min={0}
                   step="0.01"
@@ -324,6 +334,7 @@ export default function NewOrderPage() {
                   size="icon"
                   onClick={() => removeItem(item.key)}
                   disabled={items.length <= 1}
+                  aria-label={`Remove item ${idx + 1}`}
                   className="text-muted-foreground hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />

@@ -201,6 +201,28 @@ export const ordersRouter = createTRPCRouter({
       return data;
     }),
 
+  getDeliveryDates: publicProcedure
+    .input(
+      z.object({
+        startDate: z.string(),
+        endDate: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      const { data, error } = await supabaseAdmin
+        .from("orders")
+        .select("delivery_date")
+        .gte("delivery_date", input.startDate)
+        .lte("delivery_date", input.endDate)
+        .not("delivery_date", "is", null)
+        .neq("status", "cancelled");
+
+      if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+
+      const dates = [...new Set((data ?? []).map((o) => o.delivery_date as string))];
+      return { dates };
+    }),
+
   delete: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ input }) => {

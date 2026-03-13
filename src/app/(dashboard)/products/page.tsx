@@ -70,9 +70,10 @@ export default function ProductsPage() {
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
                 placeholder="Search by name..."
+                aria-label="Search products"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -83,7 +84,7 @@ export default function ProductsPage() {
               value={category}
               onValueChange={(v) => setCategory(v === "all" || v === null ? "" : v)}
             >
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter by category">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>

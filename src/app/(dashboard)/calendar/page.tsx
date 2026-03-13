@@ -104,6 +104,11 @@ export default function CalendarPage() {
     endDate,
   });
 
+  const { data: deliveryData } = trpc.orders.getDeliveryDates.useQuery({
+    startDate,
+    endDate,
+  });
+
   const upsertSlot = trpc.calendar.upsertSlot.useMutation({
     onSuccess: () => {
       utils.calendar.getSlots.invalidate();
@@ -135,6 +140,11 @@ export default function CalendarPage() {
     }
     return map;
   }, [data]);
+
+  // dates that have order deliveries
+  const deliveryDates = useMemo(() => {
+    return new Set(deliveryData?.dates ?? []);
+  }, [deliveryData]);
 
   const weeks = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
 
@@ -218,26 +228,29 @@ export default function CalendarPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="mb-4 flex items-center justify-between">
-            <Button variant="outline" size="icon" onClick={goToPrevMonth}>
-              <ChevronLeft className="h-4 w-4" />
+            <Button variant="outline" size="icon" onClick={goToPrevMonth} aria-label="Previous month">
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </Button>
-            <h3 className="text-lg font-semibold">
+            <h3 className="text-lg font-semibold" aria-live="polite">
               {MONTH_NAMES[viewMonth]} {viewYear}
             </h3>
-            <Button variant="outline" size="icon" onClick={goToNextMonth}>
-              <ChevronRight className="h-4 w-4" />
+            <Button variant="outline" size="icon" onClick={goToNextMonth} aria-label="Next month">
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
 
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-px rounded-lg border bg-border overflow-hidden">
+          <div className="grid grid-cols-7 gap-px rounded-lg border bg-border overflow-hidden" role="grid" aria-label="Calendar">
             {/* Weekday headers */}
             {WEEKDAYS.map((day) => (
               <div
                 key={day}
+                role="columnheader"
                 className="bg-muted px-1 py-2 text-center text-xs font-medium text-muted-foreground sm:text-sm"
               >
-                {day}
+                <span className="sr-only">{day}</span>
+                <span aria-hidden="true">{day.slice(0, 1)}</span>
+                <span className="hidden sm:inline" aria-hidden="true">{day.slice(1)}</span>
               </div>
             ))}
 
@@ -248,6 +261,7 @@ export default function CalendarPage() {
                   return (
                     <div
                       key={`empty-${wi}-${di}`}
+                      role="gridcell"
                       className="bg-background min-h-[60px] sm:min-h-[80px]"
                     />
                   );
@@ -262,9 +276,18 @@ export default function CalendarPage() {
                 const slotMaxOrders = slot ? (slot.max_orders as number) : 5;
                 const isFull = currentOrders >= slotMaxOrders && !slotBlocked;
 
+                const ariaLabel = [
+                  formatDisplayDate(dateStr),
+                  isToday ? "Today" : "",
+                  slotBlocked ? "Blocked" : `${currentOrders} of ${slotMaxOrders} orders`,
+                  deliveryDates.has(dateStr) ? "Has deliveries" : "",
+                ].filter(Boolean).join(", ");
+
                 return (
                   <button
                     key={dateStr}
+                    role="gridcell"
+                    aria-label={ariaLabel}
                     onClick={() => openDateDialog(day)}
                     className={`bg-background min-h-[60px] sm:min-h-[80px] p-1 sm:p-2 text-left transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-inset ${
                       isPast ? "opacity-50" : ""
@@ -272,7 +295,7 @@ export default function CalendarPage() {
                       slotBlocked ? "bg-destructive/5" : ""
                     }`}
                   >
-                    <div className="flex flex-col gap-0.5 sm:gap-1">
+                    <div className="flex flex-col gap-0.5 sm:gap-1" aria-hidden="true">
                       <span
                         className={`text-xs font-medium sm:text-sm ${
                           isToday
@@ -297,6 +320,11 @@ export default function CalendarPage() {
                         >
                           {currentOrders}/{slotMaxOrders}
                         </Badge>
+                      )}
+                      {deliveryDates.has(dateStr) && (
+                        <div className="flex justify-center">
+                          <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        </div>
                       )}
                     </div>
                   </button>
@@ -326,6 +354,10 @@ export default function CalendarPage() {
                 0/5
               </Badge>
               <span>Orders / Max</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="h-2 w-2 rounded-full bg-primary" />
+              <span>Has deliveries</span>
             </div>
           </div>
         </CardContent>

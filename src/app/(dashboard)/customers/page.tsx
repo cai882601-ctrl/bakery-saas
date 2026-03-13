@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
+import { getAriaSort } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -110,9 +111,10 @@ export default function CustomersPage() {
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
                 placeholder="Search by name, email, or phone..."
+                aria-label="Search customers"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -126,7 +128,7 @@ export default function CustomersPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter by source">
                 <SelectValue placeholder="All Sources" />
               </SelectTrigger>
               <SelectContent>
@@ -151,43 +153,47 @@ export default function CustomersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>
+                <TableHead aria-sort={getAriaSort(sortBy, "name", sortOrder)}>
                   <button
                     className="flex items-center gap-1 hover:text-foreground"
                     onClick={() => toggleSort("name")}
+                    aria-label="Sort by name"
                   >
                     Name
-                    <ArrowUpDown className="h-3 w-3" />
+                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
                   </button>
                 </TableHead>
                 <TableHead className="hidden sm:table-cell">Email</TableHead>
                 <TableHead className="hidden md:table-cell">Phone</TableHead>
                 <TableHead className="hidden lg:table-cell">Source</TableHead>
-                <TableHead>
+                <TableHead aria-sort={getAriaSort(sortBy, "total_orders", sortOrder)}>
                   <button
                     className="flex items-center gap-1 hover:text-foreground"
                     onClick={() => toggleSort("total_orders")}
+                    aria-label="Sort by number of orders"
                   >
                     Orders
-                    <ArrowUpDown className="h-3 w-3" />
+                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
                   </button>
                 </TableHead>
-                <TableHead>
+                <TableHead aria-sort={getAriaSort(sortBy, "total_spent", sortOrder)}>
                   <button
                     className="flex items-center gap-1 hover:text-foreground"
                     onClick={() => toggleSort("total_spent")}
+                    aria-label="Sort by total spent"
                   >
                     Spent
-                    <ArrowUpDown className="h-3 w-3" />
+                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
                   </button>
                 </TableHead>
-                <TableHead className="hidden lg:table-cell">
+                <TableHead className="hidden lg:table-cell" aria-sort={getAriaSort(sortBy, "created_at", sortOrder)}>
                   <button
                     className="flex items-center gap-1 hover:text-foreground"
                     onClick={() => toggleSort("created_at")}
+                    aria-label="Sort by creation date"
                   >
                     Created
-                    <ArrowUpDown className="h-3 w-3" />
+                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
                   </button>
                 </TableHead>
               </TableRow>
@@ -256,8 +262,9 @@ export default function CustomersPage() {
               size="sm"
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
+              aria-label="Go to previous page"
             >
-              <ChevronLeft className="mr-1 h-4 w-4" />
+              <ChevronLeft className="mr-1 h-4 w-4" aria-hidden="true" />
               Previous
             </Button>
             <Button
@@ -265,9 +272,10 @@ export default function CustomersPage() {
               size="sm"
               disabled={page >= data.totalPages}
               onClick={() => setPage(page + 1)}
+              aria-label="Go to next page"
             >
               Next
-              <ChevronRight className="ml-1 h-4 w-4" />
+              <ChevronRight className="ml-1 h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>
