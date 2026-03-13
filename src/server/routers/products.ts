@@ -16,7 +16,7 @@ export const productsRouter = createTRPCRouter({
     .query(async ({ input }) => {
       let query = supabaseAdmin
         .from("products")
-        .select("*")
+        .select("*", { count: "exact" })
         .order("name", { ascending: true })
         .limit(input.limit);
 
@@ -27,9 +27,9 @@ export const productsRouter = createTRPCRouter({
         query = query.eq("category", input.category);
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
       if (error) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
-      return { products: data ?? [] };
+      return { products: data ?? [], total: count ?? 0 };
     }),
 
   getById: publicProcedure

@@ -147,106 +147,161 @@ export default function CustomersPage() {
         </CardContent>
       </Card>
 
-      {/* Table */}
-      <Card>
+      {/* Table (Desktop) / Cards (Mobile) */}
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead aria-sort={getAriaSort(sortBy, "name", sortOrder)}>
-                  <button
-                    className="flex items-center gap-1 hover:text-foreground"
-                    onClick={() => toggleSort("name")}
-                    aria-label="Sort by name"
-                  >
-                    Name
-                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                </TableHead>
-                <TableHead className="hidden sm:table-cell">Email</TableHead>
-                <TableHead className="hidden md:table-cell">Phone</TableHead>
-                <TableHead className="hidden lg:table-cell">Source</TableHead>
-                <TableHead aria-sort={getAriaSort(sortBy, "total_orders", sortOrder)}>
-                  <button
-                    className="flex items-center gap-1 hover:text-foreground"
-                    onClick={() => toggleSort("total_orders")}
-                    aria-label="Sort by number of orders"
-                  >
-                    Orders
-                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                </TableHead>
-                <TableHead aria-sort={getAriaSort(sortBy, "total_spent", sortOrder)}>
-                  <button
-                    className="flex items-center gap-1 hover:text-foreground"
-                    onClick={() => toggleSort("total_spent")}
-                    aria-label="Sort by total spent"
-                  >
-                    Spent
-                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                </TableHead>
-                <TableHead className="hidden lg:table-cell" aria-sort={getAriaSort(sortBy, "created_at", sortOrder)}>
-                  <button
-                    className="flex items-center gap-1 hover:text-foreground"
-                    onClick={() => toggleSort("created_at")}
-                    aria-label="Sort by creation date"
-                  >
-                    Created
-                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+          {/* Mobile Card View */}
+          <div className="divide-y sm:hidden">
+            {isLoading ? (
+              <div className="p-8 text-center">Loading customers...</div>
+            ) : !data?.customers.length ? (
+              <div className="p-8 text-center text-muted-foreground">
+                {search || source
+                  ? "No customers match your filters."
+                  : "No customers yet."}
+              </div>
+            ) : (
+              data.customers.map((customer: any) => (
+                <Link
+                  key={customer.id}
+                  href={`/customers/${customer.id}`}
+                  className="flex flex-col gap-1 p-4 active:bg-muted/50"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-primary">
+                      {customer.name}
+                    </span>
+                    <Badge variant="secondary" className="text-[10px] capitalize">
+                      {customer.source}
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {customer.email || customer.phone || "No contact info"}
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-xs">
+                    <span>{customer.total_orders} orders</span>
+                    <span className="font-bold">
+                      {formatCurrency(customer.total_spent)}
+                    </span>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden sm:block">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center">
-                    Loading customers...
-                  </TableCell>
+                  <TableHead aria-sort={getAriaSort(sortBy, "name", sortOrder)}>
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort("name")}
+                      aria-label="Sort by name"
+                    >
+                      Name
+                      <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell">Email</TableHead>
+                  <TableHead className="hidden md:table-cell">Phone</TableHead>
+                  <TableHead className="hidden lg:table-cell">Source</TableHead>
+                  <TableHead
+                    aria-sort={getAriaSort(sortBy, "total_orders", sortOrder)}
+                  >
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort("total_orders")}
+                      aria-label="Sort by number of orders"
+                    >
+                      Orders
+                      <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </TableHead>
+                  <TableHead
+                    aria-sort={getAriaSort(sortBy, "total_spent", sortOrder)}
+                  >
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort("total_spent")}
+                      aria-label="Sort by total spent"
+                    >
+                      Spent
+                      <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </TableHead>
+                  <TableHead
+                    className="hidden lg:table-cell"
+                    aria-sort={getAriaSort(sortBy, "created_at", sortOrder)}
+                  >
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort("created_at")}
+                      aria-label="Sort by creation date"
+                    >
+                      Created
+                      <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </TableHead>
                 </TableRow>
-              ) : !data?.customers.length ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                    {search || source
-                      ? "No customers match your filters."
-                      : "No customers yet. Add your first customer to get started."}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                data.customers.map((customer: Record<string, unknown>) => (
-                  <TableRow key={customer.id as string} className="cursor-pointer hover:bg-muted/50">
-                    <TableCell>
-                      <Link
-                        href={`/customers/${customer.id}`}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        {customer.name as string}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell text-muted-foreground">
-                      {(customer.email as string) || "--"}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">
-                      {(customer.phone as string) || "--"}
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <Badge variant="secondary" className="capitalize">
-                        {customer.source as string}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{customer.total_orders as number}</TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(customer.total_spent as string)}
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {formatDate(customer.created_at as string)}
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-32 text-center">
+                      Loading customers...
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : !data?.customers.length ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="h-32 text-center text-muted-foreground"
+                    >
+                      {search || source
+                        ? "No customers match your filters."
+                        : "No customers yet. Add your first customer to get started."}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  data.customers.map((customer: any) => (
+                    <TableRow
+                      key={customer.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                    >
+                      <TableCell>
+                        <Link
+                          href={`/customers/${customer.id}`}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          {customer.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-muted-foreground">
+                        {customer.email || "--"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {customer.phone || "--"}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <Badge variant="secondary" className="capitalize">
+                          {customer.source}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{customer.total_orders}</TableCell>
+                      <TableCell className="font-medium">
+                        {formatCurrency(customer.total_spent)}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {formatDate(customer.created_at)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

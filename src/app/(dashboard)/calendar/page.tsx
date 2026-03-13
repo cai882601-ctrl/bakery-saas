@@ -10,6 +10,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -23,6 +29,7 @@ import {
   Lock,
   Unlock,
   Settings,
+  Truck,
 } from "lucide-react";
 
 // ── helpers ──────────────────────────────────────────────
@@ -209,161 +216,179 @@ export default function CalendarPage() {
   const selectedSlot = selectedDate ? slotsByDate[selectedDate] : null;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Calendar</h2>
-          <p className="text-muted-foreground">
-            Manage your availability and order schedule.
-          </p>
+    <TooltipProvider>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Calendar</h2>
+            <p className="text-muted-foreground">
+              Manage your availability and order schedule.
+            </p>
+          </div>
+          <Button variant="outline" onClick={goToToday}>
+            <CalendarDays className="mr-2 h-4 w-4" />
+            Today
+          </Button>
         </div>
-        <Button variant="outline" onClick={goToToday}>
-          <CalendarDays className="mr-2 h-4 w-4" />
-          Today
-        </Button>
+
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex items-center justify-between border-b p-4">
+              <div className="flex items-center gap-4">
+                <h3 className="text-xl font-bold" aria-live="polite">
+                  {MONTH_NAMES[viewMonth]} {viewYear}
+                </h3>
+                <div className="flex items-center rounded-md border">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-none border-r"
+                    onClick={goToPrevMonth}
+                    aria-label="Previous month"
+                  >
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-none"
+                    onClick={goToNextMonth}
+                    aria-label="Next month"
+                  >
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </div>
+              </div>
+              <div className="hidden sm:flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  <span>Deliveries</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Lock className="h-3 w-3 text-destructive" />
+                  <span>Blocked</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-px bg-border" role="grid" aria-label="Calendar">
+              {WEEKDAYS.map((day) => (
+                <div
+                  key={day}
+                  role="columnheader"
+                  className="bg-muted px-2 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm"
+                >
+                  <span className="sr-only">{day}</span>
+                  <span aria-hidden="true">{day.slice(0, 3)}</span>
+                </div>
+              ))}
+
+              {weeks.flatMap((week, wi) =>
+                week.map((day, di) => {
+                  if (day === null) {
+                    return (
+                      <div
+                        key={`empty-${wi}-${di}`}
+                        role="gridcell"
+                        className="bg-background/50 min-h-[80px] sm:min-h-[100px]"
+                      />
+                    );
+                  }
+
+                  const dateStr = toDateStr(viewYear, viewMonth, day);
+                  const slot = slotsByDate[dateStr];
+                  const isPast = dateStr < todayStr;
+                  const isToday = dateStr === todayStr;
+                  const slotBlocked = slot ? (slot.is_blocked as boolean) : false;
+                  const currentOrders = slot ? (slot.current_orders as number) : 0;
+                  const slotMaxOrders = slot ? (slot.max_orders as number) : 5;
+                  const isFull = currentOrders >= slotMaxOrders && !slotBlocked;
+                  const hasDeliveries = deliveryDates.has(dateStr);
+
+                  const ariaLabel = [
+                    formatDisplayDate(dateStr),
+                    isToday ? "Today" : "",
+                    slotBlocked ? "Blocked" : `${currentOrders} of ${slotMaxOrders} orders`,
+                    hasDeliveries ? "Has deliveries" : "",
+                  ].filter(Boolean).join(", ");
+
+                  return (
+                    <Tooltip key={dateStr}>
+                      <TooltipTrigger
+                        render={
+                          <button
+                            role="gridcell"
+                            aria-label={ariaLabel}
+                            onClick={() => openDateDialog(day)}
+                            className={`bg-background relative min-h-[80px] sm:min-h-[100px] p-2 text-left transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-inset ${
+                              isPast ? "opacity-50" : ""
+                            } ${
+                              isToday ? "bg-primary/5 ring-1 ring-primary ring-inset" : ""
+                            } ${slotBlocked ? "bg-destructive/5" : ""}`}
+                          >
+                            <div
+                              className="flex h-full flex-col justify-between"
+                              aria-hidden="true"
+                            >
+                              <div className="flex items-start justify-between">
+                                <span
+                                  className={`text-sm font-semibold sm:text-base ${
+                                    isToday
+                                      ? "flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground"
+                                      : "text-foreground"
+                                  }`}
+                                >
+                                  {day}
+                                </span>
+                                {slotBlocked && (
+                                  <Lock className="h-3.5 w-3.5 text-destructive" />
+                                )}
+                              </div>
+
+                              <div className="flex flex-col gap-1 mt-auto">
+                                {!slotBlocked && (
+                                  <Badge
+                                    variant={isFull ? "destructive" : "outline"}
+                                    className={`w-fit px-1 py-0 text-[10px] sm:text-xs font-normal ${
+                                      !isFull && currentOrders > 0
+                                        ? "border-primary/30 bg-primary/5"
+                                        : ""
+                                    }`}
+                                  >
+                                    {currentOrders}/{slotMaxOrders}
+                                  </Badge>
+                                )}
+                                {hasDeliveries && (
+                                  <div className="flex items-center gap-1 text-[10px] font-medium text-primary">
+                                    <Truck className="h-3 w-3" />
+                                    <span className="hidden sm:inline">Delivery</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        }
+                      />
+                      {hasDeliveries && (
+                        <TooltipContent>
+                          Order deliveries scheduled for today
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {isLoading && (
+          <p className="mt-4 text-center text-sm text-muted-foreground animate-pulse">
+            Loading calendar data...
+          </p>
+        )}
       </div>
 
-      {/* Month Navigation */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="mb-4 flex items-center justify-between">
-            <Button variant="outline" size="icon" onClick={goToPrevMonth} aria-label="Previous month">
-              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <h3 className="text-lg font-semibold" aria-live="polite">
-              {MONTH_NAMES[viewMonth]} {viewYear}
-            </h3>
-            <Button variant="outline" size="icon" onClick={goToNextMonth} aria-label="Next month">
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </Button>
-          </div>
-
-          {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-px rounded-lg border bg-border overflow-hidden" role="grid" aria-label="Calendar">
-            {/* Weekday headers */}
-            {WEEKDAYS.map((day) => (
-              <div
-                key={day}
-                role="columnheader"
-                className="bg-muted px-1 py-2 text-center text-xs font-medium text-muted-foreground sm:text-sm"
-              >
-                <span className="sr-only">{day}</span>
-                <span aria-hidden="true">{day.slice(0, 1)}</span>
-                <span className="hidden sm:inline" aria-hidden="true">{day.slice(1)}</span>
-              </div>
-            ))}
-
-            {/* Date cells */}
-            {weeks.map((week, wi) =>
-              week.map((day, di) => {
-                if (day === null) {
-                  return (
-                    <div
-                      key={`empty-${wi}-${di}`}
-                      role="gridcell"
-                      className="bg-background min-h-[60px] sm:min-h-[80px]"
-                    />
-                  );
-                }
-
-                const dateStr = toDateStr(viewYear, viewMonth, day);
-                const slot = slotsByDate[dateStr];
-                const isPast = dateStr < todayStr;
-                const isToday = dateStr === todayStr;
-                const slotBlocked = slot ? (slot.is_blocked as boolean) : false;
-                const currentOrders = slot ? (slot.current_orders as number) : 0;
-                const slotMaxOrders = slot ? (slot.max_orders as number) : 5;
-                const isFull = currentOrders >= slotMaxOrders && !slotBlocked;
-
-                const ariaLabel = [
-                  formatDisplayDate(dateStr),
-                  isToday ? "Today" : "",
-                  slotBlocked ? "Blocked" : `${currentOrders} of ${slotMaxOrders} orders`,
-                  deliveryDates.has(dateStr) ? "Has deliveries" : "",
-                ].filter(Boolean).join(", ");
-
-                return (
-                  <button
-                    key={dateStr}
-                    role="gridcell"
-                    aria-label={ariaLabel}
-                    onClick={() => openDateDialog(day)}
-                    className={`bg-background min-h-[60px] sm:min-h-[80px] p-1 sm:p-2 text-left transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-inset ${
-                      isPast ? "opacity-50" : ""
-                    } ${isToday ? "ring-2 ring-primary ring-inset" : ""} ${
-                      slotBlocked ? "bg-destructive/5" : ""
-                    }`}
-                  >
-                    <div className="flex flex-col gap-0.5 sm:gap-1" aria-hidden="true">
-                      <span
-                        className={`text-xs font-medium sm:text-sm ${
-                          isToday
-                            ? "flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground sm:h-6 sm:w-6"
-                            : ""
-                        }`}
-                      >
-                        {day}
-                      </span>
-                      {slotBlocked && (
-                        <div className="flex items-center gap-0.5">
-                          <Lock className="h-3 w-3 text-destructive" />
-                          <span className="hidden text-[10px] text-destructive sm:inline">
-                            Blocked
-                          </span>
-                        </div>
-                      )}
-                      {!slotBlocked && slot && (
-                        <Badge
-                          variant={isFull ? "destructive" : "secondary"}
-                          className="w-fit px-1 py-0 text-[10px] sm:text-xs"
-                        >
-                          {currentOrders}/{slotMaxOrders}
-                        </Badge>
-                      )}
-                      {deliveryDates.has(dateStr) && (
-                        <div className="flex justify-center">
-                          <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          {isLoading && (
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-              Loading calendar data...
-            </p>
-          )}
-
-          {/* Legend */}
-          <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full ring-2 ring-primary" />
-              <span>Today</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Lock className="h-3 w-3 text-destructive" />
-              <span>Blocked</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Badge variant="secondary" className="px-1 py-0 text-[10px]">
-                0/5
-              </Badge>
-              <span>Orders / Max</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-2 w-2 rounded-full bg-primary" />
-              <span>Has deliveries</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Date Detail Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -375,12 +400,11 @@ export default function CalendarPage() {
 
           {selectedDate && (
             <div className="space-y-4">
-              {/* Current status */}
               {selectedSlot && (
                 <>
                   <div className="flex items-center justify-between rounded-lg bg-muted p-3">
                     <div>
-                      <p className="text-sm font-medium">Current Orders</p>
+                      <p className="text-sm font-medium text-muted-foreground">Current Orders</p>
                       <p className="text-2xl font-bold">
                         {selectedSlot.current_orders as number}
                         <span className="text-sm font-normal text-muted-foreground">
@@ -396,10 +420,9 @@ export default function CalendarPage() {
                 </>
               )}
 
-              {/* Edit form */}
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="max-orders">Max Orders</Label>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="max-orders">Daily Order Limit</Label>
                   <Input
                     id="max-orders"
                     type="number"
@@ -411,8 +434,10 @@ export default function CalendarPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="is-blocked">Block this date</Label>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="is-blocked">Accepting Orders</Label>
+                  </div>
                   <Button
                     id="is-blocked"
                     variant={isBlocked ? "destructive" : "outline"}
@@ -434,7 +459,7 @@ export default function CalendarPage() {
                 </div>
 
                 {isBlocked && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Label htmlFor="block-reason">Block Reason</Label>
                     <Input
                       id="block-reason"
@@ -445,8 +470,8 @@ export default function CalendarPage() {
                   </div>
                 )}
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="notes">Notes</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Internal Notes</Label>
                   <Textarea
                     id="notes"
                     placeholder="Any notes for this date..."
@@ -459,34 +484,36 @@ export default function CalendarPage() {
             </div>
           )}
 
-          <DialogFooter>
-            {/* Quick block/unblock buttons */}
-            {selectedSlot && (selectedSlot.is_blocked as boolean) ? (
-              <Button
-                variant="outline"
-                onClick={handleQuickUnblock}
-                disabled={isMutating}
-              >
-                <Unlock className="mr-1 h-3 w-3" />
-                Quick Unblock
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                onClick={handleQuickBlock}
-                disabled={isMutating}
-                className="text-destructive"
-              >
-                <Lock className="mr-1 h-3 w-3" />
-                Quick Block
-              </Button>
-            )}
-            <Button onClick={handleSave} disabled={isMutating}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <div className="flex flex-1 gap-2">
+              {selectedSlot && (selectedSlot.is_blocked as boolean) ? (
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={handleQuickUnblock}
+                  disabled={isMutating}
+                >
+                  <Unlock className="mr-2 h-3 w-3" />
+                  Quick Unblock
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto text-destructive hover:text-destructive hover:bg-destructive/5"
+                  onClick={handleQuickBlock}
+                  disabled={isMutating}
+                >
+                  <Lock className="mr-2 h-3 w-3" />
+                  Quick Block
+                </Button>
+              )}
+            </div>
+            <Button onClick={handleSave} disabled={isMutating} className="w-full sm:w-auto">
               {isMutating ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </TooltipProvider>
   );
 }

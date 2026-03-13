@@ -118,97 +118,156 @@ export default function OrdersPage() {
         </CardContent>
       </Card>
 
-      {/* Table */}
-      <Card>
+      {/* Table (Desktop) / Cards (Mobile) */}
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order #</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead className="hidden md:table-cell">Source</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead aria-sort={getAriaSort(sortBy, "total", sortOrder)}>
-                  <button
-                    className="flex h-full w-full items-center gap-1 hover:text-foreground"
-                    onClick={() => toggleSort("total")}
-                    aria-label="Sort by total"
-                  >
-                    Total
-                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                </TableHead>
-                <TableHead className="hidden sm:table-cell" aria-sort={getAriaSort(sortBy, "delivery_date", sortOrder)}>
-                  <button
-                    className="flex h-full w-full items-center gap-1 hover:text-foreground"
-                    onClick={() => toggleSort("delivery_date")}
-                    aria-label="Sort by delivery date"
-                  >
-                    Delivery
-                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                </TableHead>
-                <TableHead className="hidden lg:table-cell" aria-sort={getAriaSort(sortBy, "created_at", sortOrder)}>
-                  <button
-                    className="flex h-full w-full items-center gap-1 hover:text-foreground"
-                    onClick={() => toggleSort("created_at")}
-                    aria-label="Sort by creation date"
-                  >
-                    Created
-                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+          {/* Mobile Card View */}
+          <div className="divide-y sm:hidden">
+            {isLoading ? (
+              <div className="p-8 text-center">Loading orders...</div>
+            ) : !data?.orders.length ? (
+              <div className="p-8 text-center text-muted-foreground">
+                {search || status
+                  ? "No orders match your filters."
+                  : "No orders yet."}
+              </div>
+            ) : (
+              data.orders.map((order: any) => (
+                <Link
+                  key={order.id}
+                  href={`/orders/${order.id}`}
+                  className="flex flex-col gap-2 p-4 active:bg-muted/50"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-primary">
+                      {order.order_number}
+                    </span>
+                    <StatusBadge status={order.status} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">
+                      {order.customers?.name ?? "Walk-in"}
+                    </span>
+                    <span className="font-bold">
+                      {formatCurrency(order.total)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                      {order.delivery_date
+                        ? `Delivery: ${formatDate(order.delivery_date)}`
+                        : "No delivery date"}
+                    </span>
+                    <span className="capitalize">{order.source}</span>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden sm:block">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center">
-                    Loading orders...
-                  </TableCell>
+                  <TableHead>Order #</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead className="hidden md:table-cell">Source</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead aria-sort={getAriaSort(sortBy, "total", sortOrder)}>
+                    <button
+                      className="flex h-full w-full items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort("total")}
+                      aria-label="Sort by total"
+                    >
+                      Total
+                      <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </TableHead>
+                  <TableHead
+                    className="hidden sm:table-cell"
+                    aria-sort={getAriaSort(sortBy, "delivery_date", sortOrder)}
+                  >
+                    <button
+                      className="flex h-full w-full items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort("delivery_date")}
+                      aria-label="Sort by delivery date"
+                    >
+                      Delivery
+                      <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </TableHead>
+                  <TableHead
+                    className="hidden lg:table-cell"
+                    aria-sort={getAriaSort(sortBy, "created_at", sortOrder)}
+                  >
+                    <button
+                      className="flex h-full w-full items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort("created_at")}
+                      aria-label="Sort by creation date"
+                    >
+                      Created
+                      <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </TableHead>
                 </TableRow>
-              ) : !data?.orders.length ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                    {search || status
-                      ? "No orders match your filters."
-                      : "No orders yet. Create your first order to get started."}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                data.orders.map((order: Record<string, unknown>) => (
-                  <TableRow key={order.id as string} className="cursor-pointer hover:bg-muted/50">
-                    <TableCell>
-                      <Link
-                        href={`/orders/${order.id}`}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        {order.order_number as string}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {(order.customers as Record<string, string> | null)?.name ?? "Walk-in"}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell capitalize">
-                      {order.source as string}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={order.status as string} />
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(order.total as string)}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      {formatDate(order.delivery_date as string | null)}
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {formatDate(order.created_at as string)}
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-32 text-center">
+                      Loading orders...
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : !data?.orders.length ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="h-32 text-center text-muted-foreground"
+                    >
+                      {search || status
+                        ? "No orders match your filters."
+                        : "No orders yet. Create your first order to get started."}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  data.orders.map((order: any) => (
+                    <TableRow
+                      key={order.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                    >
+                      <TableCell>
+                        <Link
+                          href={`/orders/${order.id}`}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          {order.order_number}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        {order.customers?.name ?? "Walk-in"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell capitalize">
+                        {order.source}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={order.status} />
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {formatCurrency(order.total)}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        {formatDate(order.delivery_date)}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {formatDate(order.created_at)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

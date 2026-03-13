@@ -292,36 +292,25 @@ export default function IngredientsPage() {
         </CardContent>
       </Card>
 
-      {/* Table */}
-      <Card>
+      {/* Table (Desktop) / Cards (Mobile) */}
+      <Card className="overflow-hidden">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex h-32 items-center justify-center">
-              <p className="text-muted-foreground">Loading ingredients...</p>
+              <p className="text-muted-foreground animate-pulse">
+                Loading ingredients...
+              </p>
             </div>
           ) : ingredients.length === 0 ? (
             <div className="flex h-32 items-center justify-center">
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-center px-4">
                 No ingredients yet. Add your first ingredient to get started.
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="hidden sm:table-cell">Unit</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    Cost/Unit
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell">
-                    Supplier
-                  </TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile Card View */}
+              <div className="divide-y sm:hidden">
                 {ingredients.map((ing) => {
                   const inStock = parseFloat((ing.in_stock as string) ?? "0");
                   const threshold = parseFloat(
@@ -330,75 +319,192 @@ export default function IngredientsPage() {
                   const isLowStock = threshold > 0 && inStock < threshold;
 
                   return (
-                    <TableRow key={ing.id as string}>
-                      <TableCell className="font-medium">
-                        {ing.name as string}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {ing.unit as string}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell font-medium">
-                        {formatCurrency(
-                          (ing.cost_per_unit as string) ?? "0"
-                        )}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell text-muted-foreground">
-                        {(ing.supplier as string) || "—"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className={isLowStock ? "text-red-600 font-semibold" : ""}>
-                            {inStock}
-                          </span>
-                          {isLowStock && (
-                            <Badge variant="destructive" className="flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              Low
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
+                    <div
+                      key={ing.id as string}
+                      className="flex flex-col gap-2 p-4 active:bg-muted/50"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-primary">
+                          {ing.name as string}
+                        </span>
                         <div className="flex gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-8 w-8 p-0"
                             aria-label={`Edit ${ing.name as string}`}
                             onClick={() => handleOpenDialog(ing)}
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          {deleteConfirm === (ing.id as string) ? (
-                            <Button
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            aria-label={`Delete ${ing.name as string}`}
+                            onClick={() => setDeleteConfirm(ing.id as string)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {ing.unit as string} •{" "}
+                          {formatCurrency((ing.cost_per_unit as string) ?? "0")}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={
+                              isLowStock ? "text-destructive font-bold" : ""
+                            }
+                          >
+                            Stock: {inStock}
+                          </span>
+                          {isLowStock && (
+                            <Badge
                               variant="destructive"
-                              size="sm"
-                              onClick={() =>
-                                deleteMutation.mutate({
-                                  id: ing.id as string,
-                                })
-                              }
+                              className="h-5 px-1.5 text-[10px]"
                             >
-                              Confirm
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              aria-label={`Delete ${ing.name as string}`}
-                              onClick={() =>
-                                setDeleteConfirm(ing.id as string)
-                              }
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                              Low
+                            </Badge>
                           )}
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+
+                      {deleteConfirm === (ing.id as string) && (
+                        <div className="mt-2 flex items-center justify-between rounded-md bg-destructive/10 p-2">
+                          <span className="text-xs font-medium text-destructive">
+                            Confirm delete?
+                          </span>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="xs"
+                              onClick={() => setDeleteConfirm(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="xs"
+                              onClick={() =>
+                                deleteMutation.mutate({ id: ing.id as string })
+                              }
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead className="hidden sm:table-cell">Unit</TableHead>
+                      <TableHead className="hidden md:table-cell">
+                        Cost/Unit
+                      </TableHead>
+                      <TableHead className="hidden lg:table-cell">
+                        Supplier
+                      </TableHead>
+                      <TableHead>Stock</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ingredients.map((ing) => {
+                      const inStock = parseFloat((ing.in_stock as string) ?? "0");
+                      const threshold = parseFloat(
+                        (ing.low_stock_threshold as string) ?? "0"
+                      );
+                      const isLowStock = threshold > 0 && inStock < threshold;
+
+                      return (
+                        <TableRow key={ing.id as string}>
+                          <TableCell className="font-medium">
+                            {ing.name as string}
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            {ing.unit as string}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell font-medium">
+                            {formatCurrency((ing.cost_per_unit as string) ?? "0")}
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell text-muted-foreground">
+                            {(ing.supplier as string) || "—"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={
+                                  isLowStock ? "text-red-600 font-semibold" : ""
+                                }
+                              >
+                                {inStock}
+                              </span>
+                              {isLowStock && (
+                                <Badge
+                                  variant="destructive"
+                                  className="flex items-center gap-1"
+                                >
+                                  <AlertCircle className="h-3 w-3" />
+                                  Low
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                aria-label={`Edit ${ing.name as string}`}
+                                onClick={() => handleOpenDialog(ing)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              {deleteConfirm === (ing.id as string) ? (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() =>
+                                    deleteMutation.mutate({
+                                      id: ing.id as string,
+                                    })
+                                  }
+                                >
+                                  Confirm
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  aria-label={`Delete ${ing.name as string}`}
+                                  onClick={() =>
+                                    setDeleteConfirm(ing.id as string)
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
