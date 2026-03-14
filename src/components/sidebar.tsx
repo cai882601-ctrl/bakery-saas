@@ -11,7 +11,10 @@ import {
   Settings,
   LayoutDashboard,
   Wheat,
+  LogOut,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { createBrowserClient } from "@/lib/supabase";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -25,9 +28,17 @@ const navItems = [
 
 export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createBrowserClient();
+    await supabase.auth.signOut();
+    router.push("/auth/login");
+    router.refresh();
+  }
 
   return (
-    <nav className={cn("flex flex-col gap-1 p-4", className)}>
+    <nav className={cn("flex flex-col gap-1 p-4 h-full", className)}>
       <div className="mb-6 px-2">
         <h1 className="text-xl font-bold tracking-tight">🧁 BakeBoard</h1>
         <p className="text-xs text-muted-foreground">Order Management</p>
@@ -51,6 +62,15 @@ export function Sidebar({ className }: { className?: string }) {
           </Link>
         );
       })}
+      <div className="mt-auto pt-4 border-t">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground min-h-[44px]"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </button>
+      </div>
     </nav>
   );
 }

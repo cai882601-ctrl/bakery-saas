@@ -121,7 +121,7 @@ export default function LandingPage() {
                 The all-in-one platform to track orders, manage customers, calculate recipe costs, and schedule your baking — so you can focus on what you love.
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <Button size="xl" className="w-full sm:w-auto" render={<Link href="/dashboard" />}>
+                <Button size="xl" className="w-full sm:w-auto" render={<Link href="/auth/signup" />}>
                   Start free today
                   <ArrowRight data-icon="inline-end" className="size-5" />
                 </Button>
@@ -235,7 +235,7 @@ export default function LandingPage() {
               Join hundreds of cottage bakers who are saving time and growing their business with BakeBoard.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button size="xl" className="px-12" render={<Link href="/dashboard" />}>
+              <Button size="xl" className="px-12" render={<Link href="/auth/signup" />}>
                 Get started for free
               </Button>
               <Link href="/pricing" className="text-sm font-semibold hover:text-primary transition-colors">

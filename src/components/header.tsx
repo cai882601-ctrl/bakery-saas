@@ -1,16 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Sidebar } from "./sidebar";
+import { createBrowserClient } from "@/lib/supabase";
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [openPathname, setOpenPathname] = useState<string | null>(null);
   const open = openPathname === pathname;
+
+  async function handleLogout() {
+    const supabase = createBrowserClient();
+    await supabase.auth.signOut();
+    router.push("/auth/login");
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 lg:hidden">
@@ -33,9 +42,9 @@ export function Header() {
         <h2 className="text-lg font-semibold lg:hidden">🧁 BakeBoard</h2>
       </div>
       <div className="flex items-center gap-2">
-        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium" aria-hidden="true">
-          B
-        </div>
+        <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Sign out">
+          <LogOut className="size-4" />
+        </Button>
       </div>
     </header>
   );

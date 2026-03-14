@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient as createSSRBrowserClient } from "@supabase/ssr";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -9,3 +10,8 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 // Client-side client with anon key (RLS enforced)
 export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+// Browser client for client components (cookie-based auth)
+export function createBrowserClient() {
+  return createSSRBrowserClient(supabaseUrl, supabaseAnonKey);
+}
