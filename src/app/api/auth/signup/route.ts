@@ -25,9 +25,11 @@ export async function POST(req: NextRequest) {
 
     // Create user profile
     if (authData?.user) {
+      const name = email?.split("@")[0] || "Baker";
       const { error: profileError } = await supabase.from("users").upsert({
         id: authData.user.id,
         email: authData.user.email,
+        name,
       });
 
       if (profileError) {
