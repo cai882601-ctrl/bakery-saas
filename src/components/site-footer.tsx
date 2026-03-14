@@ -19,7 +19,7 @@ export function SiteFooter() {
           <Link href="/#testimonials" className="hover:text-foreground">
             Testimonials
           </Link>
-          <Link href="/dashboard" className="hover:text-foreground">
+          <Link href="/auth/login" className="hover:text-foreground">
             Sign in
           </Link>
         </nav>
